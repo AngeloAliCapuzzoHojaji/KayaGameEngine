@@ -1,0 +1,250 @@
+#include "Rendering/Renderer.h"
+#include "Rendering/Shader.h"
+#include "Rendering/Camera.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
+
+namespace Kaya {
+
+Renderer::RendererData* Renderer::s_Data = nullptr;
+
+void Renderer::Init() {
+    s_Data = new RendererData();
+
+    // Initialize OpenGL
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        throw std::runtime_error("Failed to initialize GLAD");
+    }
+
+    std::cout << "OpenGL Info:" << std::endl;
+    std::cout << "  Vendor: " << glGetString(GL_VENDOR) << std::endl;
+    std::cout << "  Renderer: " << glGetString(GL_RENDERER) << std::endl;
+    std::cout << "  Version: " << glGetString(GL_VERSION) << std::endl;
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Basic shader
+    std::string vertexSrc = R"(
+        #version 460 core
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec3 a_Normal;
+        
+        uniform mat4 u_ViewProjection;
+        uniform mat4 u_Transform;
+        
+        out vec3 v_Normal;
+        out vec3 v_FragPos;
+        
+        void main() {
+            v_FragPos = vec3(u_Transform * vec4(a_Position, 1.0));
+            v_Normal = mat3(transpose(inverse(u_Transform))) * a_Normal;
+            gl_Position = u_ViewProjection * vec4(v_FragPos, 1.0);
+        }
+    )";
+
+    std::string fragmentSrc = R"(
+        #version 460 core
+        layout(location = 0) out vec4 color;
+        
+        in vec3 v_Normal;
+        in vec3 v_FragPos;
+        
+        uniform vec4 u_Color;
+        uniform vec3 u_LightPos;
+        
+        void main() {
+            vec3 norm = normalize(v_Normal);
+            vec3 lightDir = normalize(u_LightPos - v_FragPos);
+            float diff = max(dot(norm, lightDir), 0.0);
+            vec3 ambient = 0.3 * u_Color.rgb;
+            vec3 diffuse = diff * u_Color.rgb;
+            color = vec4(ambient + diffuse, u_Color.a);
+        }
+    )";
+
+    s_Data->BasicShader = std::make_shared<Shader>(vertexSrc, fragmentSrc);
+    
+    InitCube();
+    InitSphere();
+}
+
+void Renderer::Shutdown() {
+    glDeleteVertexArrays(1, &s_Data->CubeVAO);
+    glDeleteBuffers(1, &s_Data->CubeVBO);
+    glDeleteVertexArrays(1, &s_Data->SphereVAO);
+    glDeleteBuffers(1, &s_Data->SphereVBO);
+    glDeleteBuffers(1, &s_Data->SphereEBO);
+    delete s_Data;
+}
+
+void Renderer::BeginScene(Camera& camera) {
+    s_Data->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+    s_Data->BasicShader->Bind();
+    s_Data->BasicShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+    s_Data->BasicShader->SetFloat3("u_LightPos", glm::vec3(10.0f, 10.0f, 10.0f));
+}
+
+void Renderer::EndScene() {
+    s_Data->BasicShader->Unbind();
+}
+
+void Renderer::Clear(const glm::vec4& color) {
+    glClearColor(color.r, color.g, color.b, color.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+    glViewport(x, y, width, height);
+}
+
+void Renderer::InitCube() {
+    float vertices[] = {
+        // positions          // normals
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    glGenVertexArrays(1, &s_Data->CubeVAO);
+    glGenBuffers(1, &s_Data->CubeVBO);
+
+    glBindVertexArray(s_Data->CubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data->CubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindVertexArray(0);
+}
+
+void Renderer::InitSphere() {
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+
+    const unsigned int X_SEGMENTS = 32;
+    const unsigned int Y_SEGMENTS = 32;
+    const float PI = 3.14159265359f;
+
+    for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
+        for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
+            float xSegment = (float)x / (float)X_SEGMENTS;
+            float ySegment = (float)y / (float)Y_SEGMENTS;
+            float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+            float yPos = std::cos(ySegment * PI);
+            float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+
+            vertices.push_back(xPos * 0.5f);
+            vertices.push_back(yPos * 0.5f);
+            vertices.push_back(zPos * 0.5f);
+            vertices.push_back(xPos);
+            vertices.push_back(yPos);
+            vertices.push_back(zPos);
+        }
+    }
+
+    for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
+        for (unsigned int x = 0; x < X_SEGMENTS; ++x) {
+            indices.push_back(y * (X_SEGMENTS + 1) + x);
+            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
+
+            indices.push_back(y * (X_SEGMENTS + 1) + x);
+            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
+            indices.push_back(y * (X_SEGMENTS + 1) + x + 1);
+        }
+    }
+
+    s_Data->SphereIndexCount = indices.size();
+
+    glGenVertexArrays(1, &s_Data->SphereVAO);
+    glGenBuffers(1, &s_Data->SphereVBO);
+    glGenBuffers(1, &s_Data->SphereEBO);
+
+    glBindVertexArray(s_Data->SphereVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data->SphereVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data->SphereEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindVertexArray(0);
+}
+
+void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color) {
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
+    transform = glm::scale(transform, size);
+
+    s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetFloat4("u_Color", color);
+
+    glBindVertexArray(s_Data->CubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+
+void Renderer::DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color) {
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
+    transform = glm::scale(transform, glm::vec3(radius * 2.0f));
+
+    s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetFloat4("u_Color", color);
+
+    glBindVertexArray(s_Data->SphereVAO);
+    glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+} // namespace Kaya
