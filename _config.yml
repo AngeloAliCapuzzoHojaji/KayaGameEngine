@@ -1,0 +1,13 @@
+theme: jekyll-theme-cayman
+title: Kaya Game Engine
+description: A high-performance 3D game engine built from the ground up with C++17, OpenGL, and Jolt Physics
+show_downloads: true
+
+# GitHub metadata
+github:
+  is_project_page: true
+  repository_url: https://github.com/AngeloAliCapuzzoHojaji/KayaGameEngine
+
+# Custom domain configuration
+url: https://angeloach.com
+enforce_ssl: angeloach.com
