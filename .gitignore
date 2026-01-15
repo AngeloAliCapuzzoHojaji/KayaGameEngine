@@ -8,6 +8,16 @@ lib/
 *.dylib
 *.a
 
+# Third-party dependencies (users should clone these)
+ThirdParty/glfw/
+ThirdParty/glm/
+ThirdParty/glad/
+ThirdParty/JoltPhysics/
+
+# Keep only the CMakeLists.txt for third-party setup
+!ThirdParty/CMakeLists.txt
+!ThirdParty/*/CMakeLists.txt
+
 # IDE files
 .vscode/
 .vs/
