@@ -13,6 +13,8 @@ ThirdParty/glfw/
 ThirdParty/glm/
 ThirdParty/glad/
 ThirdParty/JoltPhysics/
+ThirdParty/imgui/
+ThirdParty/ImGuizmo/
 
 # Keep only the CMakeLists.txt for third-party setup
 !ThirdParty/CMakeLists.txt
