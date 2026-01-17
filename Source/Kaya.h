@@ -5,6 +5,8 @@
 #include "Core/Window.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
+#include "Core/HotReload.h"
+#include "Core/HotReloadManager.h"
 
 // Input
 #include "Input/Input.h"

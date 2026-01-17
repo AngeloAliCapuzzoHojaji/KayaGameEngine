@@ -22,10 +22,25 @@ Application::Application(const std::string& name) {
     Renderer::Init();
     Renderer::SetViewport(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
     
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+    
+    GLFWwindow* window = static_cast<GLFWwindow*>(m_Window->GetNativeWindow());
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
+    
     std::cout << name << " initialized" << std::endl;
 }
 
 Application::~Application() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    
     Renderer::Shutdown();
 }
 
