@@ -35,16 +35,19 @@ void Renderer::Init() {
         #version 460 core
         layout(location = 0) in vec3 a_Position;
         layout(location = 1) in vec3 a_Normal;
+        layout(location = 2) in vec2 a_TexCoord;
         
         uniform mat4 u_ViewProjection;
         uniform mat4 u_Transform;
         
         out vec3 v_Normal;
         out vec3 v_FragPos;
+        out vec2 v_TexCoord;
         
         void main() {
             v_FragPos = vec3(u_Transform * vec4(a_Position, 1.0));
             v_Normal = mat3(transpose(inverse(u_Transform))) * a_Normal;
+            v_TexCoord = a_TexCoord;
             gl_Position = u_ViewProjection * vec4(v_FragPos, 1.0);
         }
     )";
@@ -55,17 +58,22 @@ void Renderer::Init() {
         
         in vec3 v_Normal;
         in vec3 v_FragPos;
+        in vec2 v_TexCoord;
         
         uniform vec4 u_Color;
         uniform vec3 u_LightPos;
+        uniform sampler2D u_Texture;
+        uniform int u_UseTexture;
         
         void main() {
             vec3 norm = normalize(v_Normal);
             vec3 lightDir = normalize(u_LightPos - v_FragPos);
             float diff = max(dot(norm, lightDir), 0.0);
-            vec3 ambient = 0.3 * u_Color.rgb;
-            vec3 diffuse = diff * u_Color.rgb;
-            color = vec4(ambient + diffuse, u_Color.a);
+            
+            vec4 texColor = u_UseTexture > 0 ? texture(u_Texture, v_TexCoord) : u_Color;
+            vec3 ambient = 0.3 * texColor.rgb;
+            vec3 diffuse = diff * texColor.rgb;
+            color = vec4(ambient + diffuse, texColor.a);
         }
     )";
 
