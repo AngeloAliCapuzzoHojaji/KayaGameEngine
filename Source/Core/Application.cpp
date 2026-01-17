@@ -1,6 +1,9 @@
 #include "Core/Application.h"
 #include "Rendering/Renderer.h"
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <iostream>
 
 namespace Kaya {
@@ -43,6 +46,29 @@ void Application::Run() {
         // Render
         Renderer::Clear();
         OnRender();
+        
+        // ImGui Render (optional, overridden by editor)
+        // Start ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        OnImGuiRender();
+        
+        // Render ImGui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        
+        #ifdef IMGUI_HAS_VIEWPORT
+        // Update and Render additional Platform Windows
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
+        #endif
         
         // Swap buffers and poll events
         m_Window->OnUpdate();

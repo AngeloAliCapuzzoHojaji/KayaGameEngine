@@ -76,6 +76,12 @@ git clone https://github.com/g-truc/glm.git ThirdParty/glm
 
 # Clone Jolt Physics
 git clone https://github.com/jrouwe/JoltPhysics.git ThirdParty/JoltPhysics
+
+# Clone Dear ImGui
+git clone https://github.com/ocornut/imgui.git ThirdParty/imgui
+
+# Clone ImGuizmo
+git clone https://github.com/CedricGuillemet/ImGuizmo.git ThirdParty/ImGuizmo
 ```
 
 **3. Generate GLAD**
@@ -259,6 +265,16 @@ graph LR
 - ✅ Camera system
 - ✅ Input handling
 
+### Version 1.1 - Editor Release
+- ✅ **Visual Editor** - Full-featured scene editor with ImGui
+- ✅ Entity system with component-based architecture
+- ✅ Scene hierarchy panel with selection
+- ✅ Properties inspector for editing transforms, rendering, and physics
+- ✅ Viewport window with framebuffer rendering
+- ✅ Transform gizmos (translate, rotate, scale)
+- ✅ Menu bar with file operations
+- ✅ Real-time scene preview
+
 ### Planned Features
 
 #### 🎨 Rendering
@@ -271,8 +287,8 @@ graph LR
 - [ ] Skybox and environment mapping
 
 #### ⚙️ Core Systems
-- [ ] Entity Component System (ECS)
-- [ ] Scene graph and hierarchy
+- [x] Entity Component System (basic)
+- [x] Scene graph and hierarchy
 - [ ] Asset management system
 - [ ] Serialization and save/load
 - [ ] Resource hot-reloading
@@ -287,10 +303,48 @@ graph LR
 - [ ] Networking for multiplayer
 
 #### 🛠️ Tools
-- [ ] Visual editor
+- [x] **Visual editor** - Scene hierarchy, properties inspector, viewport, transform gizmos
 - [ ] Material editor
-- [ ] Scene editor
+- [ ] Advanced scene editor features (copy/paste, prefabs)
 - [ ] Asset pipeline tools
+
+## 🎨 Using the Editor
+
+The Kaya Editor provides a complete visual environment for scene creation and editing.
+
+### Running the Editor
+
+```bash
+# Windows
+.\build\bin\Release\KayaEditor.exe
+
+# Linux/macOS
+./build/bin/KayaEditor
+```
+
+### Editor Features
+
+- **Scene Hierarchy** - View and manage all entities in your scene
+  - Right-click to create new entities (Cube, Sphere, Empty)
+  - Click to select entities
+  - Right-click on entities to delete
+  
+- **Properties Inspector** - Edit entity properties in real-time
+  - Transform: Position, Rotation, Scale
+  - Render: Geometry type, Color, Visibility
+  - Physics: Body info, Dynamic/Static, Mass
+  
+- **Viewport** - Real-time 3D scene preview
+  - WASD: Move camera forward/left/back/right
+  - Space/Shift: Move camera up/down
+  - Right Mouse + Drag: Rotate camera
+  - Gizmo controls: Translate, Rotate, Scale
+  - Ctrl: Snap to grid
+  
+- **Menu Bar**
+  - File: New Scene, Open, Save, Exit
+  - Edit: Undo/Redo (planned)
+  - View: Toggle panels
 
 ## 📖 Documentation
 
@@ -345,6 +399,8 @@ Built with these excellent open-source libraries:
 | [GLAD](https://glad.dav1d.de/) | OpenGL loader | MIT/Public Domain |
 | [GLM](https://github.com/g-truc/glm) | Mathematics library | MIT |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | Physics engine | MIT |
+| [Dear ImGui](https://github.com/ocornut/imgui) | GUI and editor interface | MIT |
+| [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) | Transform gizmos | MIT |
 
 Special thanks to the open-source community for making game engine development accessible!
 

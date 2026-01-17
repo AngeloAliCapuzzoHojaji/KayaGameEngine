@@ -41,6 +41,7 @@ public:
     GLFWwindow* GetNativeWindow() const { return m_Window; }
 
     bool ShouldClose() const;
+    void Close();
 
 private:
     void Init(const WindowProps& props);

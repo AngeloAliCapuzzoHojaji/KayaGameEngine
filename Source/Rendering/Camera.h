@@ -15,6 +15,21 @@ public:
     const glm::vec3& GetPosition() const { return m_Position; }
     const glm::vec3& GetRotation() const { return m_Rotation; }
 
+    // Yaw and Pitch accessors (in degrees)
+    void SetYaw(float yaw) { m_Rotation.y = yaw; RecalculateViewMatrix(); }
+    void SetPitch(float pitch) { 
+        pitch = glm::clamp(pitch, -89.0f, 89.0f); 
+        m_Rotation.x = pitch; 
+        RecalculateViewMatrix(); 
+    }
+    float GetYaw() const { return m_Rotation.y; }
+    float GetPitch() const { return m_Rotation.x; }
+    
+    void SetAspectRatio(float aspectRatio) { 
+        m_AspectRatio = aspectRatio; 
+        SetPerspective(m_FOV, m_AspectRatio, m_NearClip, m_FarClip); 
+    }
+
     const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
     const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     const glm::mat4& GetViewProjectionMatrix() const { return m_ViewProjectionMatrix; }

@@ -24,6 +24,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "Source/Input/*.cpp"
     "Source/Math/*.cpp"
     "Source/Utils/*.cpp"
+    "Source/Editor/*.cpp"
 )
 
 file(GLOB_RECURSE ENGINE_HEADERS
@@ -33,6 +34,7 @@ file(GLOB_RECURSE ENGINE_HEADERS
     "Source/Input/*.h"
     "Source/Math/*.h"
     "Source/Utils/*.h"
+    "Source/Editor/*.h"
 )
 
 add_library(KayaEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
@@ -42,6 +44,9 @@ target_include_directories(KayaEngine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glfw/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui/backends
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ImGuizmo
 )
 
 target_link_libraries(KayaEngine PUBLIC
@@ -49,6 +54,8 @@ target_link_libraries(KayaEngine PUBLIC
     glad
     glm::glm
     Jolt
+    imgui
+    ImGuizmo
 )
 
 # Platform-specific libraries

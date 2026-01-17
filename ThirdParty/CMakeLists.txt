@@ -24,3 +24,9 @@ set(TARGET_SAMPLES OFF CACHE BOOL "" FORCE)
 set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
 set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 add_subdirectory(JoltPhysics/Build)
+
+# ImGui
+add_subdirectory(imgui)
+
+# ImGuizmo
+add_subdirectory(ImGuizmo)

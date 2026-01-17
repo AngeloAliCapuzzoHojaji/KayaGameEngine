@@ -16,6 +16,7 @@ public:
     virtual void OnShutdown() {}
     virtual void OnUpdate(float deltaTime) {}
     virtual void OnRender() {}
+    virtual void OnImGuiRender() {}
 
     Window& GetWindow() { return *m_Window; }
     

@@ -69,6 +69,9 @@ enum class MouseButton {
     Middle = Button2
 };
 
+// Alias for convenience
+using MouseCode = MouseButton;
+
 class Input {
 public:
     static bool IsKeyPressed(KeyCode keycode);

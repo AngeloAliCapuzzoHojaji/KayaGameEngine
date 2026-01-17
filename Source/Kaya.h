@@ -3,6 +3,8 @@
 // Core
 #include "Core/Application.h"
 #include "Core/Window.h"
+#include "Core/Entity.h"
+#include "Core/Scene.h"
 
 // Input
 #include "Input/Input.h"
@@ -11,6 +13,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Camera.h"
+#include "Rendering/Framebuffer.h"
 
 // Physics
 #include "Physics/PhysicsSystem.h"
