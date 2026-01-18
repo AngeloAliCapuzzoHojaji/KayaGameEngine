@@ -25,7 +25,8 @@ Kaya is a modern, from-scratch 3D game engine designed for learning and experime
 
 ### 🎨 Rendering System
 - **Modern OpenGL 4.6** - Core profile with programmable pipeline
-- **Dynamic Lighting** - Phong lighting model with ambient and diffuse components
+- **PBR Rendering** - Physically Based Rendering with metallic-roughness workflow
+- **Dynamic Lighting** - Advanced lighting with Cook-Torrance BRDF
 - **Shadow Mapping** - Real-time directional light shadows with PCF filtering
 - **Texture System** - PNG/JPG/TGA loading with filtering and wrapping modes
 - **Model Loading** - Import OBJ, GLTF, and FBX models with Assimp
@@ -284,11 +285,10 @@ graph LR
 - [x] Texture system with loading and sampling
 - [x] Model loading (GLTF, OBJ, FBX)
 - [x] Shadow mapping with directional lights
-- [ ] PBR (Physically Based Rendering)
-- [ ] Advanced lighting improvements
-- [ ] Post-processing effects
+- [x] PBR (Physically Based Rendering) with metallic-roughness workflow
+- [ ] Post-processing effects (bloom, tone mapping, color grading)
 - [ ] Particle systems
-- [ ] Skybox and environment mapping
+- [ ] Skybox and environment mapping with HDR support
 
 #### ⚙️ Core Systems
 - [x] Entity Component System (basic)
