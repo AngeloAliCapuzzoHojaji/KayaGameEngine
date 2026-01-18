@@ -7,6 +7,7 @@
 namespace Kaya {
 
 class Texture;
+struct PBRMaterial;
 
 struct Vertex {
     glm::vec3 Position;
@@ -20,6 +21,10 @@ struct Material {
     std::shared_ptr<Texture> SpecularMap = nullptr;
     std::shared_ptr<Texture> NormalMap = nullptr;
     float Shininess = 32.0f;
+    
+    // PBR properties
+    bool UsePBR = false;
+    std::shared_ptr<PBRMaterial> PBR = nullptr;
 };
 
 class Mesh {

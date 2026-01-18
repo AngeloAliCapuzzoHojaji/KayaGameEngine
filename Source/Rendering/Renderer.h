@@ -21,6 +21,9 @@ public:
     static void BeginScene(Camera& camera);
     static void EndScene();
     
+    // Camera
+    static void SetCameraPosition(const glm::vec3& position);
+    
     // Shadow mapping
     static void SetDirectionalLight(DirectionalLight* light);
     static void SetShadowMap(ShadowMap* shadowMap);
@@ -46,7 +49,9 @@ private:
     struct RendererData {
         std::shared_ptr<Shader> BasicShader;
         std::shared_ptr<Shader> ShadowShader;
+        std::shared_ptr<Shader> PBRShader;
         glm::mat4 ViewProjectionMatrix;
+        glm::vec3 CameraPosition;
         
         DirectionalLight* DirectionalLight = nullptr;
         ShadowMap* ShadowMap = nullptr;

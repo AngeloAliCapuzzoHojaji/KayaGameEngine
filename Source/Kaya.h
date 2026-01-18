@@ -20,6 +20,7 @@
 #include "Rendering/Mesh.h"
 #include "Rendering/Model.h"
 #include "Rendering/Light.h"
+#include "Rendering/PBRMaterial.h"
 
 // Physics
 #include "Physics/PhysicsSystem.h"
