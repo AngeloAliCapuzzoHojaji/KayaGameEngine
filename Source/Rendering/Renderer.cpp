@@ -6,6 +6,7 @@
 #include "Rendering/Mesh.h"
 #include "Rendering/Light.h"
 #include "Rendering/PBRMaterial.h"
+#include "Rendering/Skybox.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -292,6 +293,40 @@ void Renderer::Init() {
     
     s_Data->PBRShader = std::make_shared<Shader>(pbrVertexSrc, pbrFragmentSrc);
     
+    // Skybox shader
+    std::string skyboxVertexSrc = R"(
+        #version 460 core
+        layout (location = 0) in vec3 a_Position;
+
+        out vec3 v_TexCoords;
+
+        uniform mat4 u_Projection;
+        uniform mat4 u_View;
+
+        void main()
+        {
+            v_TexCoords = a_Position;
+            vec4 pos = u_Projection * u_View * vec4(a_Position, 1.0);
+            gl_Position = pos.xyww;
+        }
+    )";
+    
+    std::string skyboxFragmentSrc = R"(
+        #version 460 core
+        out vec4 FragColor;
+
+        in vec3 v_TexCoords;
+
+        uniform samplerCube u_Skybox;
+
+        void main()
+        {    
+            FragColor = texture(u_Skybox, v_TexCoords);
+        }
+    )";
+    
+    s_Data->SkyboxShader = std::make_shared<Shader>(skyboxVertexSrc, skyboxFragmentSrc);
+    
     InitCube();
     InitSphere();
 }
@@ -307,6 +342,8 @@ void Renderer::Shutdown() {
 
 void Renderer::BeginScene(Camera& camera) {
     s_Data->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+    s_Data->ViewMatrix = camera.GetViewMatrix();
+    s_Data->ProjectionMatrix = camera.GetProjectionMatrix();
     s_Data->CameraPosition = camera.GetPosition();
     s_Data->BasicShader->Bind();
     s_Data->BasicShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
@@ -640,6 +677,23 @@ void Renderer::EndShadowPass() {
     
     s_Data->ShadowMap->Unbind();
     s_Data->ShadowShader->Unbind();
+}
+
+void Renderer::DrawSkybox(Skybox* skybox) {
+    if (!skybox) return;
+    
+    s_Data->SkyboxShader->Bind();
+    
+    // Remove translation from view matrix
+    glm::mat4 view = glm::mat4(glm::mat3(s_Data->ViewMatrix));
+    
+    s_Data->SkyboxShader->SetMat4("u_View", view);
+    s_Data->SkyboxShader->SetMat4("u_Projection", s_Data->ProjectionMatrix);
+    s_Data->SkyboxShader->SetInt("u_Skybox", 0);
+    
+    skybox->Draw();
+    
+    s_Data->SkyboxShader->Unbind();
 }
 
 } // namespace Kaya

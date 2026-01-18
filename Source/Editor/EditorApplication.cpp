@@ -257,6 +257,11 @@ namespace Editor {
         }
 
         Renderer::EndScene();
+        
+        // Draw skybox last (if present)
+        if (m_Scene->GetSkybox()) {
+            Renderer::DrawSkybox(m_Scene->GetSkybox());
+        }
 
         // Unbind framebuffer
         m_ViewportPanel.GetFramebuffer()->Unbind();

@@ -33,30 +33,13 @@ target_include_directories(FPSExample PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../Source
 )
 
-# FPS Game DLL (Hot Reloadable)
-add_library(FPSGame SHARED
-    FPSGame.cpp
+# Rendering Demo - Showcases all rendering features
+add_executable(RenderingDemo
+    RenderingDemo.cpp
 )
 
-target_link_libraries(FPSGame PRIVATE KayaEngine)
+target_link_libraries(RenderingDemo PRIVATE KayaEngine)
 
-target_include_directories(FPSGame PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Source
-)
-
-# Set output directory to same as executables for easy loading
-set_target_properties(FPSGame PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}
-)
-
-# Hot Reload Host
-add_executable(HotReloadHost
-    HotReloadHost.cpp
-)
-
-target_link_libraries(HotReloadHost PRIVATE KayaEngine)
-
-target_include_directories(HotReloadHost PRIVATE
+target_include_directories(RenderingDemo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../Source
 )

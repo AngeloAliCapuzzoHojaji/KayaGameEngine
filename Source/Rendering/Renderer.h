@@ -12,6 +12,7 @@ class Model;
 class Mesh;
 class DirectionalLight;
 class ShadowMap;
+class Skybox;
 
 class Renderer {
 public:
@@ -44,13 +45,19 @@ public:
     // Model rendering
     static void DrawModel(const std::shared_ptr<Model>& model, const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale);
     static void DrawMesh(Mesh* mesh, const glm::mat4& transform);
+    
+    // Skybox rendering
+    static void DrawSkybox(Skybox* skybox);
 
 private:
     struct RendererData {
         std::shared_ptr<Shader> BasicShader;
         std::shared_ptr<Shader> ShadowShader;
         std::shared_ptr<Shader> PBRShader;
+        std::shared_ptr<Shader> SkyboxShader;
         glm::mat4 ViewProjectionMatrix;
+        glm::mat4 ViewMatrix;
+        glm::mat4 ProjectionMatrix;
         glm::vec3 CameraPosition;
         
         DirectionalLight* DirectionalLight = nullptr;

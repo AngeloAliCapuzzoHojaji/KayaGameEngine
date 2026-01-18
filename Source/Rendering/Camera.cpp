@@ -9,6 +9,15 @@ Camera::Camera(float fov, float aspectRatio, float nearClip, float farClip)
     RecalculateViewMatrix();
 }
 
+Camera::Camera(const glm::vec3& position, const glm::vec3& up, float yaw, float pitch)
+    : m_Position(position), m_FOV(45.0f), m_AspectRatio(16.0f/9.0f), m_NearClip(0.1f), m_FarClip(1000.0f) {
+    m_Rotation.x = pitch;  // Pitch
+    m_Rotation.y = yaw;    // Yaw
+    m_Rotation.z = 0.0f;   // Roll
+    m_ProjectionMatrix = glm::perspective(glm::radians(m_FOV), m_AspectRatio, m_NearClip, m_FarClip);
+    RecalculateViewMatrix();
+}
+
 void Camera::SetPerspective(float fov, float aspectRatio, float nearClip, float farClip) {
     m_FOV = fov;
     m_AspectRatio = aspectRatio;

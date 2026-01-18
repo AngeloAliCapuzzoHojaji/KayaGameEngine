@@ -8,6 +8,7 @@
 namespace Kaya {
 
     class PhysicsSystem;
+    class Skybox;
 
     class Scene {
     public:
@@ -29,6 +30,10 @@ namespace Kaya {
         Entity* GetSelectedEntity() const;
         void SetSelectedEntity(Entity* entity);
         void ClearSelection();
+        
+        // Skybox
+        void SetSkybox(std::shared_ptr<Skybox> skybox) { m_Skybox = skybox; }
+        Skybox* GetSkybox() const { return m_Skybox.get(); }
 
         // Update
         void Update(float deltaTime, PhysicsSystem* physics);
@@ -36,6 +41,7 @@ namespace Kaya {
     private:
         std::string m_Name;
         std::vector<std::shared_ptr<Entity>> m_Entities;
+        std::shared_ptr<Skybox> m_Skybox;
     };
 
 }

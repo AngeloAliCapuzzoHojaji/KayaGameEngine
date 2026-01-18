@@ -28,6 +28,8 @@ Kaya is a modern, from-scratch 3D game engine designed for learning and experime
 - **PBR Rendering** - Physically Based Rendering with metallic-roughness workflow
 - **Dynamic Lighting** - Advanced lighting with Cook-Torrance BRDF
 - **Shadow Mapping** - Real-time directional light shadows with PCF filtering
+- **Post-Processing** - Bloom, tone mapping, and vignette effects
+- **Skybox System** - Cubemap loading and environment mapping
 - **Texture System** - PNG/JPG/TGA loading with filtering and wrapping modes
 - **Model Loading** - Import OBJ, GLTF, and FBX models with Assimp
 - **Flexible Camera** - First-person perspective camera with smooth controls
@@ -108,14 +110,22 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j$(nproc)
 ```
 
-**5. Run the sandbox**
+**5. Run an example**
 ```bash
-# Windows
+# Windows - Run the comprehensive Rendering Demo
+.\bin\Release\RenderingDemo.exe
+
+# Or run other examples
 .\bin\Release\Sandbox.exe
+.\bin\Release\KayaEditor.exe
+.\bin\Release\FPSExample.exe
 
 # Linux/macOS
+./bin/RenderingDemo
 ./bin/Sandbox
 ```
+
+**🎨 Rendering Demo**: See [Examples/RENDERING_DEMO.md](Examples/RENDERING_DEMO.md) for full controls and features showcase.
 
 > 💡 **Detailed setup instructions**: See [SETUP.md](SETUP.md) for platform-specific guidance and troubleshooting.
 
@@ -312,7 +322,38 @@ graph LR
 - [ ] Advanced scene editor features (copy/paste, prefabs)
 - [ ] Asset pipeline tools
 
-## 🎨 Using the Editor
+## � Examples
+
+Kaya includes several example projects to help you get started:
+
+### 🎨 RenderingDemo
+**Comprehensive showcase of all rendering features**
+
+Interactive demo with three scenes demonstrating:
+- Texture system and UV mapping
+- PBR materials (metallic-roughness workflow)
+- Shadow mapping with PCF filtering
+- Post-processing (bloom, tone mapping, vignette)
+- Skybox rendering
+
+**Controls:**
+- WASD/Space/Shift: Camera movement
+- Mouse: Look around
+- 1-4: Toggle features/switch scenes
+- ESC: Exit
+
+📖 Full guide: [Examples/RENDERING_DEMO.md](Examples/RENDERING_DEMO.md)
+
+### 🎯 Sandbox
+Minimal example showing basic application setup and rendering.
+
+### 🎮 FPSExample
+First-person camera example with physics integration.
+
+### 🛠️ KayaEditor
+Visual editor with scene hierarchy, properties panel, and 3D viewport.
+
+## �🎨 Using the Editor
 
 The Kaya Editor provides a complete visual environment for scene creation and editing.
 
@@ -405,6 +446,8 @@ Built with these excellent open-source libraries:
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | Physics engine | MIT |
 | [Dear ImGui](https://github.com/ocornut/imgui) | GUI and editor interface | MIT |
 | [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) | Transform gizmos | MIT |
+| [Assimp](https://github.com/assimp/assimp) | 3D model loading | BSD-3-Clause |
+| [STB](https://github.com/nothings/stb) | Image loading | MIT/Public Domain |
 
 Special thanks to the open-source community for making game engine development accessible!
 

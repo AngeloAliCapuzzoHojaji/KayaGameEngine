@@ -8,6 +8,7 @@ namespace Kaya {
 class Camera {
 public:
     Camera(float fov = 45.0f, float aspectRatio = 16.0f/9.0f, float nearClip = 0.1f, float farClip = 1000.0f);
+    Camera(const glm::vec3& position, const glm::vec3& up, float yaw, float pitch);
 
     void SetPosition(const glm::vec3& position) { m_Position = position; RecalculateViewMatrix(); }
     void SetRotation(const glm::vec3& rotation) { m_Rotation = rotation; RecalculateViewMatrix(); }
