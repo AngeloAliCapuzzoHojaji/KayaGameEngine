@@ -10,6 +10,7 @@ namespace Kaya {
 
     // Forward declarations
     class PhysicsSystem;
+    class Texture;
 
     struct TransformComponent {
         glm::vec3 Position = glm::vec3(0.0f);
@@ -29,6 +30,8 @@ namespace Kaya {
         Type GeometryType = Type::Cube;
         glm::vec4 Color = glm::vec4(1.0f);
         bool Visible = true;
+        std::shared_ptr<Texture> TextureMap = nullptr;
+        bool UseTexture = false;
     };
 
     struct PhysicsComponent {

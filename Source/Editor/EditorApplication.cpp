@@ -233,10 +233,18 @@ namespace Editor {
 
             switch (render.GeometryType) {
                 case RenderComponent::Type::Cube:
-                    Renderer::DrawCube(transform.Position, transform.Scale, render.Color);
+                    if (render.UseTexture && render.TextureMap) {
+                        Renderer::DrawCube(transform.Position, transform.Scale, render.TextureMap);
+                    } else {
+                        Renderer::DrawCube(transform.Position, transform.Scale, render.Color);
+                    }
                     break;
                 case RenderComponent::Type::Sphere:
-                    Renderer::DrawSphere(transform.Position, transform.Scale.x, render.Color);
+                    if (render.UseTexture && render.TextureMap) {
+                        Renderer::DrawSphere(transform.Position, transform.Scale.x, render.TextureMap);
+                    } else {
+                        Renderer::DrawSphere(transform.Position, transform.Scale.x, render.Color);
+                    }
                     break;
                 default:
                     break;

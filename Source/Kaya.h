@@ -16,6 +16,7 @@
 #include "Rendering/Shader.h"
 #include "Rendering/Camera.h"
 #include "Rendering/Framebuffer.h"
+#include "Rendering/Texture.h"
 
 // Physics
 #include "Physics/PhysicsSystem.h"

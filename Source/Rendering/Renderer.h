@@ -7,6 +7,7 @@ namespace Kaya {
 
 class Shader;
 class Camera;
+class Texture;
 
 class Renderer {
 public:
@@ -22,6 +23,10 @@ public:
     // Simple rendering functions
     static void DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color);
     static void DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color);
+    
+    // Textured rendering functions
+    static void DrawCube(const glm::vec3& position, const glm::vec3& size, const std::shared_ptr<Texture>& texture);
+    static void DrawSphere(const glm::vec3& position, float radius, const std::shared_ptr<Texture>& texture);
 
 private:
     struct RendererData {
