@@ -151,20 +151,35 @@ m_ShadowMap = std::make_shared<ShadowMap>(2048, 2048);
 - **Format**: Cubemap (6 faces)
 - **Rendering**: Optimized depth testing (GL_LEQUAL)
 - **Shader**: View matrix without translation for infinite distance
-- **Support**: HDR environment maps (placeholder in demo)
+- **Support**: HDR environment maps
 
-**Note**: To use custom skybox, replace placeholder with actual cubemap textures:
+**Note**: Skybox is disabled by default in the demo. To enable it:
+
+1. Create a `skybox` folder in the executable directory (`build/bin/Release/skybox`)
+2. Add 6 cubemap texture files:
+   - `right.jpg` (+X)
+   - `left.jpg` (-X)
+   - `top.jpg` (+Y)
+   - `bottom.jpg` (-Y)
+   - `front.jpg` (+Z)
+   - `back.jpg` (-Z)
+3. Uncomment the skybox creation code in `RenderingDemo.cpp`:
+
 ```cpp
+// In CreateSkybox() method:
 std::vector<std::string> faces = {
-    "path/to/right.jpg",   // +X
-    "path/to/left.jpg",    // -X
-    "path/to/top.jpg",     // +Y
-    "path/to/bottom.jpg",  // -Y
-    "path/to/front.jpg",   // +Z
-    "path/to/back.jpg"     // -Z
+    "skybox/right.jpg",
+    "skybox/left.jpg",
+    "skybox/top.jpg",
+    "skybox/bottom.jpg",
+    "skybox/front.jpg",
+    "skybox/back.jpg"
 };
 auto cubemap = std::make_shared<Cubemap>(faces);
+m_Skybox = std::make_shared<Skybox>(cubemap);
 ```
+
+4. Rebuild and press **3** to toggle skybox rendering
 
 ## 📊 Performance Information
 

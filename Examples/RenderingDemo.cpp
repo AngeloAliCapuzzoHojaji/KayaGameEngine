@@ -42,12 +42,16 @@ public:
         std::cout << "  ESC        - Exit\n" << std::endl;
 
         // Initialize camera
+        float aspectRatio = GetWindow().GetAspectRatio();
+        uint32_t width = GetWindow().GetWidth();
+        uint32_t height = GetWindow().GetHeight();
+        
         m_Camera = std::make_shared<Camera>(
             glm::vec3(0.0f, 5.0f, 15.0f),
             glm::vec3(0.0f, 1.0f, 0.0f),
             -90.0f, -15.0f
         );
-        m_Camera->SetPerspective(45.0f, 1920.0f / 1080.0f, 0.1f, 1000.0f);
+        m_Camera->SetPerspective(45.0f, aspectRatio, 0.1f, 1000.0f);
 
         // Setup directional light with shadows
         m_Light = std::make_shared<DirectionalLight>();
@@ -62,11 +66,13 @@ public:
         Renderer::SetShadowMap(m_ShadowMap.get());
 
         // Setup post-processing
-        m_PostProcessor = std::make_shared<PostProcessor>(1920, 1080);
+        m_PostProcessor = std::make_shared<PostProcessor>(width, height);
         m_PostProcessor->SetBloomEnabled(true);
         m_PostProcessor->SetBloomThreshold(1.0f);
         m_PostProcessor->SetExposure(1.2f);
         m_PostProcessor->SetVignetteStrength(0.35f);
+        
+        std::cout << "Post-processing disabled by default. Press 2 to enable." << std::endl;
 
         // Create skybox (example with generated colors - replace with actual cubemap files)
         CreateSkybox();
@@ -94,8 +100,9 @@ public:
             Renderer::EndShadowPass();
         }
 
-        // Main render pass with post-processing
+        // Main render pass
         if (m_PostProcessEnabled) {
+            // Render to post-processor framebuffer
             m_PostProcessor->BeginScene();
         }
 
@@ -125,6 +132,11 @@ public:
             m_FrameCount = 0;
             m_TimeAccumulator = 0.0f;
         }
+    }
+
+    void OnRender() override {
+        // The scene is already rendered in OnUpdate
+        // This ensures the buffer is presented to screen
     }
 
     void OnShutdown() override {
@@ -205,21 +217,12 @@ private:
     }
 
     void CreateSkybox() {
-        // Create a simple gradient skybox
-        // In production, you would load actual cubemap textures
-        std::vector<std::string> faces = {
-            "skybox/right.jpg",
-            "skybox/left.jpg",
-            "skybox/top.jpg",
-            "skybox/bottom.jpg",
-            "skybox/front.jpg",
-            "skybox/back.jpg"
-        };
-
-        // Note: This will create placeholder cubemap since files don't exist
-        // Replace with actual skybox textures for production use
-        auto cubemap = std::make_shared<Cubemap>(faces);
+        // Create a procedural gradient skybox (no texture files needed!)
+        auto cubemap = std::make_shared<Cubemap>(); // Default constructor creates gradient
         m_Skybox = std::make_shared<Skybox>(cubemap);
+        m_SkyboxEnabled = true;
+        
+        std::cout << "Procedural gradient skybox created. Press 3 to toggle." << std::endl;
     }
 
     void CreateTextureDemo() {
@@ -440,7 +443,7 @@ private:
 
     // Feature toggles
     bool m_ShadowsEnabled = true;
-    bool m_PostProcessEnabled = true;
+    bool m_PostProcessEnabled = false;  // Disabled by default for direct screen rendering
     bool m_SkyboxEnabled = true;
 
     // Performance tracking

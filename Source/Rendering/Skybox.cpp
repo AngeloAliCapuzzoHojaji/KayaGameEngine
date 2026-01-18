@@ -15,6 +15,11 @@ Cubemap::Cubemap(const std::string& hdrPath) {
     LoadFromHDR(hdrPath);
 }
 
+Cubemap::Cubemap() {
+    // Create procedural gradient skybox
+    CreateProceduralGradient();
+}
+
 Cubemap::~Cubemap() {
     if (m_RendererID) {
         glDeleteTextures(1, &m_RendererID);
@@ -78,6 +83,76 @@ void Cubemap::LoadFromHDR(const std::string& hdrPath) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     std::cout << "HDR Cubemap created (placeholder)" << std::endl;
+}
+
+void Cubemap::CreateProceduralGradient() {
+    glGenTextures(1, &m_RendererID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
+
+    const int size = 256;
+    std::vector<unsigned char> data(size * size * 3);
+
+    // Define colors for gradient (top to bottom)
+    unsigned char topColor[3] = {40, 80, 150};      // Sky blue
+    unsigned char horizonColor[3] = {180, 150, 120}; // Warm horizon
+    unsigned char bottomColor[3] = {60, 60, 80};     // Dark bottom
+
+    // Generate each face
+    for (unsigned int face = 0; face < 6; ++face) {
+        for (int y = 0; y < size; ++y) {
+            for (int x = 0; x < size; ++x) {
+                int index = (y * size + x) * 3;
+                
+                // Calculate gradient based on face and position
+                float fy = (float)y / (float)size;
+                float t = 0.0f;
+                
+                switch (face) {
+                    case 0: // +X (right)
+                    case 1: // -X (left)
+                    case 4: // +Z (front)
+                    case 5: // -Z (back)
+                        t = fy; // Vertical gradient
+                        break;
+                    case 2: // +Y (top)
+                        t = 0.0f; // All top color
+                        break;
+                    case 3: // -Y (bottom)
+                        t = 1.0f; // All bottom color
+                        break;
+                }
+                
+                // Smooth gradient interpolation
+                unsigned char r, g, b;
+                if (t < 0.5f) {
+                    float s = t * 2.0f;
+                    r = (unsigned char)(topColor[0] * (1.0f - s) + horizonColor[0] * s);
+                    g = (unsigned char)(topColor[1] * (1.0f - s) + horizonColor[1] * s);
+                    b = (unsigned char)(topColor[2] * (1.0f - s) + horizonColor[2] * s);
+                } else {
+                    float s = (t - 0.5f) * 2.0f;
+                    r = (unsigned char)(horizonColor[0] * (1.0f - s) + bottomColor[0] * s);
+                    g = (unsigned char)(horizonColor[1] * (1.0f - s) + bottomColor[1] * s);
+                    b = (unsigned char)(horizonColor[2] * (1.0f - s) + bottomColor[2] * s);
+                }
+                
+                data[index + 0] = r;
+                data[index + 1] = g;
+                data[index + 2] = b;
+            }
+        }
+        
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB,
+                    size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    std::cout << "Procedural gradient skybox created" << std::endl;
 }
 
 void Cubemap::Bind(unsigned int slot) const {

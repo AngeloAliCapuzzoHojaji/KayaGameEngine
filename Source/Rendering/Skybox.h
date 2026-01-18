@@ -14,6 +14,9 @@ public:
     // Load cubemap from HDR equirectangular map
     Cubemap(const std::string& hdrPath);
     
+    // Create procedural gradient skybox (no textures needed)
+    Cubemap();
+    
     ~Cubemap();
 
     void Bind(unsigned int slot = 0) const;
@@ -24,6 +27,7 @@ public:
 private:
     void LoadFromFaces(const std::vector<std::string>& faces);
     void LoadFromHDR(const std::string& hdrPath);
+    void CreateProceduralGradient();
 
 private:
     unsigned int m_RendererID = 0;
