@@ -11,6 +11,7 @@ namespace Kaya {
     // Forward declarations
     class PhysicsSystem;
     class Texture;
+    class Model;
 
     struct TransformComponent {
         glm::vec3 Position = glm::vec3(0.0f);
@@ -24,7 +25,8 @@ namespace Kaya {
         enum class Type {
             None,
             Cube,
-            Sphere
+            Sphere,
+            Model
         };
 
         Type GeometryType = Type::Cube;
@@ -32,6 +34,7 @@ namespace Kaya {
         bool Visible = true;
         std::shared_ptr<Texture> TextureMap = nullptr;
         bool UseTexture = false;
+        std::shared_ptr<Model> ModelAsset = nullptr;
     };
 
     struct PhysicsComponent {

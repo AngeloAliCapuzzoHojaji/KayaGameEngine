@@ -45,6 +45,8 @@ target_include_directories(KayaEngine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/assimp/include
+    ${CMAKE_BINARY_DIR}/ThirdParty/assimp/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/imgui/backends
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ImGuizmo
@@ -57,6 +59,7 @@ target_link_libraries(KayaEngine PUBLIC
     Jolt
     imgui
     ImGuizmo
+    assimp
 )
 
 # Platform-specific libraries

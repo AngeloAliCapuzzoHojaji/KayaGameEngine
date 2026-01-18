@@ -246,6 +246,11 @@ namespace Editor {
                         Renderer::DrawSphere(transform.Position, transform.Scale.x, render.Color);
                     }
                     break;
+                case RenderComponent::Type::Model:
+                    if (render.ModelAsset) {
+                        Renderer::DrawModel(render.ModelAsset, transform.Position, transform.Rotation, transform.Scale);
+                    }
+                    break;
                 default:
                     break;
             }
