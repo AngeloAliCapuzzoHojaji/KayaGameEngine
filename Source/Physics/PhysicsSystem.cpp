@@ -266,4 +266,9 @@ glm::vec3 PhysicsSystem::GetBodyRotation(BodyID bodyID) const {
     return glm::vec3(euler.GetX(), euler.GetY(), euler.GetZ());
 }
 
+glm::vec3 PhysicsSystem::GetBodyVelocity(BodyID bodyID) const {
+    Vec3 vel = m_BodyInterface->GetLinearVelocity(bodyID);
+    return glm::vec3(vel.GetX(), vel.GetY(), vel.GetZ());
+}
+
 } // namespace Kaya

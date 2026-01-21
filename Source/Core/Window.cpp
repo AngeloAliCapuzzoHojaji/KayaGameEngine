@@ -67,6 +67,8 @@ void Window::Init(const WindowProps& props) {
         WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
         data.Width = width;
         data.Height = height;
+        // Update OpenGL viewport
+        glViewport(0, 0, width, height);
     });
 
     glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {

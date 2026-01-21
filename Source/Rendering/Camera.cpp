@@ -29,8 +29,8 @@ void Camera::SetPerspective(float fov, float aspectRatio, float nearClip, float 
 
 void Camera::RecalculateViewMatrix() {
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position);
-    transform = glm::rotate(transform, glm::radians(m_Rotation.x), glm::vec3(1, 0, 0)); // Pitch
-    transform = glm::rotate(transform, glm::radians(m_Rotation.y), glm::vec3(0, 1, 0)); // Yaw
+    transform = glm::rotate(transform, glm::radians(m_Rotation.y), glm::vec3(0, 1, 0)); // Yaw (around world Y)
+    transform = glm::rotate(transform, glm::radians(m_Rotation.x), glm::vec3(1, 0, 0)); // Pitch (around local X)
     transform = glm::rotate(transform, glm::radians(m_Rotation.z), glm::vec3(0, 0, 1)); // Roll
 
     m_ViewMatrix = glm::inverse(transform);

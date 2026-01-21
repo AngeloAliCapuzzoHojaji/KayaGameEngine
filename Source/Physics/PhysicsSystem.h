@@ -38,6 +38,7 @@ public:
     // Body queries
     glm::vec3 GetBodyPosition(JPH::BodyID bodyID) const;
     glm::vec3 GetBodyRotation(JPH::BodyID bodyID) const;
+    glm::vec3 GetBodyVelocity(JPH::BodyID bodyID) const;
 
     JPH::PhysicsSystem& GetJoltPhysicsSystem() { return *m_PhysicsSystem; }
 
