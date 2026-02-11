@@ -12,6 +12,10 @@ struct GPUMetrics {
     unsigned int ShaderBinds = 0;
     unsigned int TextureBinds = 0;
 
+    // Culling stats
+    unsigned int ObjectsTested = 0;
+    unsigned int ObjectsCulled = 0;
+
     // Timing
     float CPUFrameTimeMs = 0.0f;
     float GPUFrameTimeMs = 0.0f;
@@ -42,6 +46,8 @@ struct GPUMetrics {
         Triangles = 0;
         ShaderBinds = 0;
         TextureBinds = 0;
+        ObjectsTested = 0;
+        ObjectsCulled = 0;
     }
 
     void PushHistory() {
@@ -73,6 +79,7 @@ public:
     static void RecordIndexedDrawCall(unsigned int indexCount);
     static void RecordShaderBind();
     static void RecordTextureBind();
+    static void RecordFrustumTest(bool culled);
 
     // Render the overlay
     static void RenderOverlay();
@@ -81,11 +88,15 @@ public:
     static void SetVisible(bool visible);
     static bool IsVisible();
 
+    static void SetDebugCullingActive(bool active);
+    static bool IsDebugCullingActive();
+
     static const GPUMetrics& GetMetrics();
 
 private:
     static GPUMetrics s_Metrics;
     static bool s_Visible;
+    static bool s_DebugCullingActive;
     static bool s_Initialized;
 
     // OpenGL timer query objects (double-buffered)

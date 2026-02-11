@@ -37,6 +37,11 @@ void Renderer::Init() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Face culling — skip back-facing triangles
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     // Basic shader
     std::string vertexSrc = R"(
         #version 460 core
@@ -46,6 +51,7 @@ void Renderer::Init() {
         
         uniform mat4 u_ViewProjection;
         uniform mat4 u_Transform;
+        uniform mat3 u_NormalMatrix;
         uniform mat4 u_LightSpaceMatrix;
         
         out vec3 v_Normal;
@@ -55,7 +61,7 @@ void Renderer::Init() {
         
         void main() {
             v_FragPos = vec3(u_Transform * vec4(a_Position, 1.0));
-            v_Normal = mat3(transpose(inverse(u_Transform))) * a_Normal;
+            v_Normal = u_NormalMatrix * a_Normal;
             v_TexCoord = a_TexCoord;
             v_FragPosLightSpace = u_LightSpaceMatrix * vec4(v_FragPos, 1.0);
             gl_Position = u_ViewProjection * vec4(v_FragPos, 1.0);
@@ -122,7 +128,63 @@ void Renderer::Init() {
     )";
 
     s_Data->BasicShader = std::make_shared<Shader>(vertexSrc, fragmentSrc);
-    
+
+    // Debug line shader (for AABB wireframes)
+    std::string debugLineVertSrc = R"(
+        #version 460 core
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec4 a_Color;
+        uniform mat4 u_ViewProjection;
+        out vec4 v_Color;
+        void main() {
+            v_Color = a_Color;
+            gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+        }
+    )";
+    std::string debugLineFragSrc = R"(
+        #version 460 core
+        in vec4 v_Color;
+        layout(location = 0) out vec4 FragColor;
+        void main() {
+            FragColor = v_Color;
+        }
+    )";
+    s_Data->DebugLineShader = std::make_shared<Shader>(debugLineVertSrc, debugLineFragSrc);
+
+    // Debug overlay shader (flat color for back-face highlights)
+    std::string debugOverlayVertSrc = R"(
+        #version 460 core
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec3 a_Normal;
+        layout(location = 2) in vec2 a_TexCoord;
+        uniform mat4 u_ViewProjection;
+        uniform mat4 u_Transform;
+        void main() {
+            gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
+        }
+    )";
+    std::string debugOverlayFragSrc = R"(
+        #version 460 core
+        layout(location = 0) out vec4 FragColor;
+        uniform vec4 u_OverlayColor;
+        void main() {
+            FragColor = u_OverlayColor;
+        }
+    )";
+    s_Data->DebugOverlayShader = std::make_shared<Shader>(debugOverlayVertSrc, debugOverlayFragSrc);
+
+    // Debug line VAO/VBO (dynamic)
+    glGenVertexArrays(1, &s_Data->DebugLineVAO);
+    glGenBuffers(1, &s_Data->DebugLineVBO);
+    glBindVertexArray(s_Data->DebugLineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data->DebugLineVBO);
+    // position (3 floats) + color (4 floats) = 7 floats per vertex
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
     // Shadow depth shader
     std::string shadowVertexSrc = R"(
         #version 460 core
@@ -327,6 +389,28 @@ void Renderer::Init() {
     )";
     
     s_Data->SkyboxShader = std::make_shared<Shader>(skyboxVertexSrc, skyboxFragmentSrc);
+
+    // Depth-only pre-pass shader
+    std::string depthVertexSrc = R"(
+        #version 460 core
+        layout(location = 0) in vec3 a_Position;
+
+        uniform mat4 u_ViewProjection;
+        uniform mat4 u_Transform;
+
+        void main() {
+            gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
+        }
+    )";
+
+    std::string depthFragmentSrc = R"(
+        #version 460 core
+        void main() {
+            // depth is written automatically
+        }
+    )";
+
+    s_Data->DepthOnlyShader = std::make_shared<Shader>(depthVertexSrc, depthFragmentSrc);
     
     InitCube();
     InitSphere();
@@ -338,6 +422,8 @@ void Renderer::Shutdown() {
     glDeleteVertexArrays(1, &s_Data->SphereVAO);
     glDeleteBuffers(1, &s_Data->SphereVBO);
     glDeleteBuffers(1, &s_Data->SphereEBO);
+    glDeleteVertexArrays(1, &s_Data->DebugLineVAO);
+    glDeleteBuffers(1, &s_Data->DebugLineVBO);
     delete s_Data;
 }
 
@@ -346,10 +432,17 @@ void Renderer::BeginScene(Camera& camera) {
     s_Data->ViewMatrix = camera.GetViewMatrix();
     s_Data->ProjectionMatrix = camera.GetProjectionMatrix();
     s_Data->CameraPosition = camera.GetPosition();
+
+    // Extract frustum planes for CPU-side culling
+    s_Data->SceneFrustum.ExtractPlanes(s_Data->ViewProjectionMatrix);
+
     s_Data->BasicShader->Bind();
     GPUMetricsManager::RecordShaderBind();
     s_Data->BasicShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
-    
+
+    // Clear debug line buffer for new frame
+    s_Data->DebugLineVertices.clear();
+
     // Set light properties
     if (s_Data->DirectionalLight) {
         s_Data->BasicShader->SetFloat3("u_LightDir", s_Data->DirectionalLight->Direction);
@@ -374,6 +467,11 @@ void Renderer::BeginScene(Camera& camera) {
 
 void Renderer::EndScene() {
     s_Data->BasicShader->Unbind();
+
+    // Flush debug wireframes
+    if (s_Data->DebugCullingMode) {
+        FlushDebugDraw();
+    }
 }
 
 void Renderer::Clear(const glm::vec4& color) {
@@ -386,15 +484,19 @@ void Renderer::SetViewport(unsigned int x, unsigned int y, unsigned int width, u
 }
 
 void Renderer::InitCube() {
+    // All faces use CCW winding when viewed from outside.
+    // Verified via cross product: (v1-v0)x(v2-v0) matches outward normal.
     float vertices[] = {
         // positions          // normals           // texture coords
+        // Back face (normal: 0,0,-1)
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
          0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
          0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
 
+        // Front face (normal: 0,0,+1)
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
          0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
          0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
@@ -402,6 +504,7 @@ void Renderer::InitCube() {
         -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f,
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
 
+        // Left face (normal: -1,0,0)
         -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
         -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
         -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
@@ -409,13 +512,15 @@ void Renderer::InitCube() {
         -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
         -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
+        // Right face (normal: +1,0,0)
          0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
          0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
          0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
          0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
 
+        // Bottom face (normal: 0,-1,0)
         -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
          0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
          0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
@@ -423,12 +528,13 @@ void Renderer::InitCube() {
         -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
         -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
+        // Top face (normal: 0,+1,0)
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
          0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
          0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f
     };
 
     glGenVertexArrays(1, &s_Data->CubeVAO);
@@ -477,13 +583,15 @@ void Renderer::InitSphere() {
 
     for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
         for (unsigned int x = 0; x < X_SEGMENTS; ++x) {
+            // First triangle (CCW from outside)
             indices.push_back(y * (X_SEGMENTS + 1) + x);
+            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
             indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
 
+            // Second triangle (CCW from outside)
             indices.push_back(y * (X_SEGMENTS + 1) + x);
-            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
             indices.push_back(y * (X_SEGMENTS + 1) + x + 1);
+            indices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
         }
     }
 
@@ -511,10 +619,28 @@ void Renderer::InitSphere() {
 }
 
 void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color) {
+    AABB box = AABB::FromCenterSize(position, size);
+
+    // Frustum cull
+    if (s_Data->FrustumCullingEnabled) {
+        bool culled = !s_Data->SceneFrustum.IsBoxVisible(box);
+        GPUMetricsManager::RecordFrustumTest(culled);
+        if (culled) {
+            if (s_Data->DebugCullingMode)
+                AddDebugAABB(box, glm::vec4(1.0f, 0.3f, 0.3f, 1.0f)); // Red = culled
+            return;
+        }
+    }
+
+    // Debug: show bounding box for visible objects
+    if (s_Data->DebugCullingMode)
+        AddDebugAABB(box, glm::vec4(0.2f, 1.0f, 0.2f, 1.0f)); // Green = visible
+
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
     transform = glm::scale(transform, size);
 
     s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetMat3("u_NormalMatrix", glm::mat3(glm::transpose(glm::inverse(transform))));
     s_Data->BasicShader->SetFloat4("u_Color", color);
     s_Data->BasicShader->SetInt("u_UseTexture", 0);
 
@@ -522,13 +648,56 @@ void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     GPUMetricsManager::RecordDrawCall(36);
     glBindVertexArray(0);
+
+    // Debug overlay: show culled back-faces as red transparent highlight
+    if (s_Data->DebugCullingMode) {
+        // Switch to overlay shader and draw only back-faces
+        s_Data->BasicShader->Unbind();
+        s_Data->DebugOverlayShader->Bind();
+        s_Data->DebugOverlayShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+        s_Data->DebugOverlayShader->SetMat4("u_Transform", transform);
+        s_Data->DebugOverlayShader->SetFloat4("u_OverlayColor", glm::vec4(1.0f, 0.15f, 0.15f, 0.35f));
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_FRONT); // Only back-faces
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(s_Data->CubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        // Restore state
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        if (!s_Data->FaceCullingEnabled) glDisable(GL_CULL_FACE);
+        s_Data->DebugOverlayShader->Unbind();
+        s_Data->BasicShader->Bind();
+    }
 }
 
 void Renderer::DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color) {
+    AABB box = AABB::FromSphere(position, radius);
+
+    // Frustum cull
+    if (s_Data->FrustumCullingEnabled) {
+        bool culled = !s_Data->SceneFrustum.IsSphereVisible(position, radius);
+        GPUMetricsManager::RecordFrustumTest(culled);
+        if (culled) {
+            if (s_Data->DebugCullingMode)
+                AddDebugAABB(box, glm::vec4(1.0f, 0.3f, 0.3f, 1.0f));
+            return;
+        }
+    }
+
+    if (s_Data->DebugCullingMode)
+        AddDebugAABB(box, glm::vec4(0.2f, 1.0f, 0.2f, 1.0f));
+
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
     transform = glm::scale(transform, glm::vec3(radius * 2.0f));
 
     s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetMat3("u_NormalMatrix", glm::mat3(glm::transpose(glm::inverse(transform))));
     s_Data->BasicShader->SetFloat4("u_Color", color);
     s_Data->BasicShader->SetInt("u_UseTexture", 0);
 
@@ -536,13 +705,54 @@ void Renderer::DrawSphere(const glm::vec3& position, float radius, const glm::ve
     glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
     GPUMetricsManager::RecordIndexedDrawCall(s_Data->SphereIndexCount);
     glBindVertexArray(0);
+
+    // Debug overlay: show culled back-faces
+    if (s_Data->DebugCullingMode) {
+        s_Data->BasicShader->Unbind();
+        s_Data->DebugOverlayShader->Bind();
+        s_Data->DebugOverlayShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+        s_Data->DebugOverlayShader->SetMat4("u_Transform", transform);
+        s_Data->DebugOverlayShader->SetFloat4("u_OverlayColor", glm::vec4(1.0f, 0.15f, 0.15f, 0.35f));
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(s_Data->SphereVAO);
+        glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        if (!s_Data->FaceCullingEnabled) glDisable(GL_CULL_FACE);
+        s_Data->DebugOverlayShader->Unbind();
+        s_Data->BasicShader->Bind();
+    }
 }
 
 void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const std::shared_ptr<Texture>& texture) {
+    AABB box = AABB::FromCenterSize(position, size);
+
+    // Frustum cull
+    if (s_Data->FrustumCullingEnabled) {
+        bool culled = !s_Data->SceneFrustum.IsBoxVisible(box);
+        GPUMetricsManager::RecordFrustumTest(culled);
+        if (culled) {
+            if (s_Data->DebugCullingMode)
+                AddDebugAABB(box, glm::vec4(1.0f, 0.3f, 0.3f, 1.0f));
+            return;
+        }
+    }
+
+    if (s_Data->DebugCullingMode)
+        AddDebugAABB(box, glm::vec4(0.2f, 1.0f, 0.2f, 1.0f));
+
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
     transform = glm::scale(transform, size);
 
     s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetMat3("u_NormalMatrix", glm::mat3(glm::transpose(glm::inverse(transform))));
     s_Data->BasicShader->SetInt("u_UseTexture", 1);
     texture->Bind(0);
     GPUMetricsManager::RecordTextureBind();
@@ -551,13 +761,54 @@ void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     GPUMetricsManager::RecordDrawCall(36);
     glBindVertexArray(0);
+
+    // Debug overlay: show culled back-faces
+    if (s_Data->DebugCullingMode) {
+        s_Data->BasicShader->Unbind();
+        s_Data->DebugOverlayShader->Bind();
+        s_Data->DebugOverlayShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+        s_Data->DebugOverlayShader->SetMat4("u_Transform", transform);
+        s_Data->DebugOverlayShader->SetFloat4("u_OverlayColor", glm::vec4(1.0f, 0.15f, 0.15f, 0.35f));
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(s_Data->CubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        if (!s_Data->FaceCullingEnabled) glDisable(GL_CULL_FACE);
+        s_Data->DebugOverlayShader->Unbind();
+        s_Data->BasicShader->Bind();
+    }
 }
 
 void Renderer::DrawSphere(const glm::vec3& position, float radius, const std::shared_ptr<Texture>& texture) {
+    AABB box = AABB::FromSphere(position, radius);
+
+    // Frustum cull
+    if (s_Data->FrustumCullingEnabled) {
+        bool culled = !s_Data->SceneFrustum.IsSphereVisible(position, radius);
+        GPUMetricsManager::RecordFrustumTest(culled);
+        if (culled) {
+            if (s_Data->DebugCullingMode)
+                AddDebugAABB(box, glm::vec4(1.0f, 0.3f, 0.3f, 1.0f));
+            return;
+        }
+    }
+
+    if (s_Data->DebugCullingMode)
+        AddDebugAABB(box, glm::vec4(0.2f, 1.0f, 0.2f, 1.0f));
+
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
     transform = glm::scale(transform, glm::vec3(radius * 2.0f));
 
     s_Data->BasicShader->SetMat4("u_Transform", transform);
+    s_Data->BasicShader->SetMat3("u_NormalMatrix", glm::mat3(glm::transpose(glm::inverse(transform))));
     s_Data->BasicShader->SetInt("u_UseTexture", 1);
     texture->Bind(0);
     GPUMetricsManager::RecordTextureBind();
@@ -566,6 +817,30 @@ void Renderer::DrawSphere(const glm::vec3& position, float radius, const std::sh
     glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
     GPUMetricsManager::RecordIndexedDrawCall(s_Data->SphereIndexCount);
     glBindVertexArray(0);
+
+    // Debug overlay: show culled back-faces
+    if (s_Data->DebugCullingMode) {
+        s_Data->BasicShader->Unbind();
+        s_Data->DebugOverlayShader->Bind();
+        s_Data->DebugOverlayShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+        s_Data->DebugOverlayShader->SetMat4("u_Transform", transform);
+        s_Data->DebugOverlayShader->SetFloat4("u_OverlayColor", glm::vec4(1.0f, 0.15f, 0.15f, 0.35f));
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(s_Data->SphereVAO);
+        glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        if (!s_Data->FaceCullingEnabled) glDisable(GL_CULL_FACE);
+        s_Data->DebugOverlayShader->Unbind();
+        s_Data->BasicShader->Bind();
+    }
 }
 
 void Renderer::DrawModel(const std::shared_ptr<Model>& model, const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale) {
@@ -648,6 +923,7 @@ void Renderer::DrawMesh(Mesh* mesh, const glm::mat4& transform) {
     } else {
         // Use basic shader for non-PBR materials
         s_Data->BasicShader->SetMat4("u_Transform", transform);
+        s_Data->BasicShader->SetMat3("u_NormalMatrix", glm::mat3(glm::transpose(glm::inverse(transform))));
         
         if (material.DiffuseMap) {
             s_Data->BasicShader->SetInt("u_UseTexture", 1);
@@ -690,6 +966,9 @@ void Renderer::EndShadowPass() {
 
 void Renderer::DrawSkybox(Skybox* skybox) {
     if (!skybox) return;
+
+    // Disable face culling for skybox (we render inside the cube)
+    if (s_Data->FaceCullingEnabled) glDisable(GL_CULL_FACE);
     
     s_Data->SkyboxShader->Bind();
     GPUMetricsManager::RecordShaderBind();
@@ -704,6 +983,91 @@ void Renderer::DrawSkybox(Skybox* skybox) {
     skybox->Draw();
     
     s_Data->SkyboxShader->Unbind();
+
+    // Re-enable face culling
+    if (s_Data->FaceCullingEnabled) glEnable(GL_CULL_FACE);
+}
+
+void Renderer::SetFaceCullingEnabled(bool enabled) {
+    s_Data->FaceCullingEnabled = enabled;
+    if (enabled)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
+}
+
+void Renderer::SetFrustumCullingEnabled(bool enabled) {
+    s_Data->FrustumCullingEnabled = enabled;
+}
+
+bool Renderer::IsFaceCullingEnabled() {
+    return s_Data->FaceCullingEnabled;
+}
+
+bool Renderer::IsFrustumCullingEnabled() {
+    return s_Data->FrustumCullingEnabled;
+}
+
+void Renderer::SetDebugCullingMode(bool enabled) {
+    s_Data->DebugCullingMode = enabled;
+}
+
+bool Renderer::IsDebugCullingMode() {
+    return s_Data->DebugCullingMode;
+}
+
+void Renderer::AddDebugAABB(const AABB& box, const glm::vec4& color) {
+    // 8 corners of the AABB
+    glm::vec3 c[8] = {
+        { box.Min.x, box.Min.y, box.Min.z }, // 0
+        { box.Max.x, box.Min.y, box.Min.z }, // 1
+        { box.Max.x, box.Min.y, box.Max.z }, // 2
+        { box.Min.x, box.Min.y, box.Max.z }, // 3
+        { box.Min.x, box.Max.y, box.Min.z }, // 4
+        { box.Max.x, box.Max.y, box.Min.z }, // 5
+        { box.Max.x, box.Max.y, box.Max.z }, // 6
+        { box.Min.x, box.Max.y, box.Max.z }, // 7
+    };
+
+    // 12 edges as pairs of corner indices
+    static const int edges[12][2] = {
+        {0,1}, {1,2}, {2,3}, {3,0}, // bottom
+        {4,5}, {5,6}, {6,7}, {7,4}, // top
+        {0,4}, {1,5}, {2,6}, {3,7}, // vertical
+    };
+
+    auto& verts = s_Data->DebugLineVertices;
+    for (int i = 0; i < 12; i++) {
+        const glm::vec3& a = c[edges[i][0]];
+        const glm::vec3& b = c[edges[i][1]];
+        // Vertex A: pos + color
+        verts.push_back(a.x); verts.push_back(a.y); verts.push_back(a.z);
+        verts.push_back(color.r); verts.push_back(color.g); verts.push_back(color.b); verts.push_back(color.a);
+        // Vertex B: pos + color
+        verts.push_back(b.x); verts.push_back(b.y); verts.push_back(b.z);
+        verts.push_back(color.r); verts.push_back(color.g); verts.push_back(color.b); verts.push_back(color.a);
+    }
+}
+
+void Renderer::FlushDebugDraw() {
+    if (s_Data->DebugLineVertices.empty()) return;
+
+    s_Data->DebugLineShader->Bind();
+    s_Data->DebugLineShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
+
+    glBindVertexArray(s_Data->DebugLineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data->DebugLineVBO);
+    glBufferData(GL_ARRAY_BUFFER,
+                 s_Data->DebugLineVertices.size() * sizeof(float),
+                 s_Data->DebugLineVertices.data(),
+                 GL_DYNAMIC_DRAW);
+
+    glLineWidth(2.0f);
+    glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(s_Data->DebugLineVertices.size() / 7));
+    glLineWidth(1.0f);
+
+    glBindVertexArray(0);
+    s_Data->DebugLineShader->Unbind();
 }
 
 } // namespace Kaya

@@ -8,30 +8,23 @@
 - **CMake 3.20+**: Download from https://cmake.org/download/
 - **Git**: Download from https://git-scm.com/
 
-### 2. Clone Dependencies
+### 2. Clone the Repository
 
-Open PowerShell in the project root and run:
+All dependencies are bundled as git submodules. Use `--recursive` to pull everything in one command:
 
 ```powershell
-# Create ThirdParty directory
-New-Item -ItemType Directory -Force -Path ThirdParty
+git clone --recursive https://github.com/AngeloAliCapuzzoHojaji/KayaGameEngine.git
+cd KayaGameEngine
+```
 
-# Clone GLFW
-git clone https://github.com/glfw/glfw.git ThirdParty/glfw
-
-# Clone GLM
-git clone https://github.com/g-truc/glm.git ThirdParty/glm
-
-# Clone Jolt Physics
-git clone https://github.com/jrouwe/JoltPhysics.git ThirdParty/JoltPhysics
-cd ThirdParty/JoltPhysics
-git checkout tags/v5.0.0
-cd ../..
+If you already cloned without `--recursive`:
+```powershell
+git submodule update --init --recursive
 ```
 
 ### 3. Generate GLAD
 
-GLAD needs to be generated manually:
+GLAD needs to be generated manually (one-time step):
 
 1. Go to https://glad.dav1d.de/
 2. Settings:
@@ -57,22 +50,32 @@ ThirdParty/glad/
 ### 4. Build the Engine
 
 ```powershell
-# Create build directory
-mkdir build
-cd build
-
-# Generate Visual Studio solution
-cmake ..
-
-# Build (or open KayaGameEngine.sln in Visual Studio)
-cmake --build . --config Release
+cmake -B build -S .
+cmake --build build --config Release
 ```
 
-### 5. Run the Sandbox
+Or use the included build script:
+```powershell
+.\build.bat
+```
+
+### 5. Run an Example
 
 ```powershell
-.\bin\Release\Sandbox.exe
+.\build\bin\Release\Sandbox.exe
 ```
+
+## Pre-Packaged Zip
+
+If you downloaded the pre-packaged zip file, all dependencies are already included. Just:
+
+1. Unzip the archive
+2. Run `build.bat` or:
+   ```powershell
+   cmake -B build -S .
+   cmake --build build --config Release
+   ```
+3. Run `build\bin\Release\Sandbox.exe`
 
 ## Troubleshooting
 

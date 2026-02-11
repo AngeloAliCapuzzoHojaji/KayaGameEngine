@@ -71,6 +71,15 @@ void Application::Run() {
             GPUMetricsManager::SetVisible(!GPUMetricsManager::IsVisible());
         f3WasPressed = f3Pressed;
 
+        // Toggle debug culling visualization with F4
+        static bool f4WasPressed = false;
+        bool f4Pressed = glfwGetKey(static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), GLFW_KEY_F4) == GLFW_PRESS;
+        if (f4Pressed && !f4WasPressed) {
+            Renderer::SetDebugCullingMode(!Renderer::IsDebugCullingMode());
+            GPUMetricsManager::SetDebugCullingActive(Renderer::IsDebugCullingMode());
+        }
+        f4WasPressed = f4Pressed;
+
         // Render
         GPUMetricsManager::BeginFrame();
         Renderer::Clear();

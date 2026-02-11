@@ -1,8 +1,8 @@
-# 🎨 Rendering Features Documentation
+# Rendering Features Documentation
 
 This document provides an overview of all rendering features implemented in the Kaya Game Engine.
 
-## ✅ Completed Features
+## Completed Features
 
 ### 1. Texture System
 **Files**: `Rendering/Texture.h`, `Rendering/Texture.cpp`
@@ -168,7 +168,7 @@ if (scene->GetSkybox()) {
 
 ---
 
-## 🎯 Shader Architecture
+## Shader Architecture
 
 ### Basic Shader
 - **Vertex**: 8 floats per vertex (position, normal, UV)
@@ -198,7 +198,7 @@ if (scene->GetSkybox()) {
 
 ---
 
-## 📊 Performance Considerations
+## Performance Considerations
 
 ### Texture System
 - Automatic mipmap generation for distant objects
@@ -232,7 +232,7 @@ if (scene->GetSkybox()) {
 
 ---
 
-## 🔧 Integration Examples
+## Integration Examples
 
 ### Complete Rendering Setup
 
@@ -301,7 +301,7 @@ private:
 
 ---
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 Potential improvements for the rendering system:
 
@@ -316,7 +316,7 @@ Potential improvements for the rendering system:
 
 ---
 
-## 📚 Resources
+## Resources
 
 - [Learn OpenGL - PBR Theory](https://learnopengl.com/PBR/Theory)
 - [Learn OpenGL - Shadow Mapping](https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping)

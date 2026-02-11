@@ -8,15 +8,9 @@ lib/
 *.dylib
 *.a
 
-# Third-party dependencies (users should clone these)
-ThirdParty/glfw/
-ThirdParty/glm/
-ThirdParty/glad/
-ThirdParty/JoltPhysics/
-ThirdParty/imgui/
-ThirdParty/ImGuizmo/
-ThirdParty/assimp/
-ThirdParty/stb/
+# Third-party dependencies (managed as git submodules)
+# GLAD is committed directly since it's generated, not a git repo.
+# STB header files are committed directly.
 
 # Keep only the CMakeLists.txt for third-party setup
 !ThirdParty/CMakeLists.txt
@@ -50,6 +44,9 @@ Makefile
 
 # Logs
 *.log
+
+# Packaged releases
+*.zip
 
 # OS files
 .DS_Store

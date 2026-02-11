@@ -1,7 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "Rendering/Frustum.h"
 #include <memory>
+#include <vector>
 
 namespace Kaya {
 
@@ -34,6 +36,16 @@ public:
     static void Clear(const glm::vec4& color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
     static void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
+    // Culling control
+    static void SetFaceCullingEnabled(bool enabled);
+    static void SetFrustumCullingEnabled(bool enabled);
+    static bool IsFaceCullingEnabled();
+    static bool IsFrustumCullingEnabled();
+
+    // Debug culling visualization (F4)
+    static void SetDebugCullingMode(bool enabled);
+    static bool IsDebugCullingMode();
+
     // Simple rendering functions
     static void DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color);
     static void DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color);
@@ -63,6 +75,23 @@ private:
         DirectionalLight* DirectionalLight = nullptr;
         ShadowMap* ShadowMap = nullptr;
         
+        // Frustum culling
+        Frustum SceneFrustum;
+        bool FrustumCullingEnabled = true;
+        bool FaceCullingEnabled = true;
+
+        // Depth pre-pass shader
+        std::shared_ptr<Shader> DepthOnlyShader;
+        bool DepthPrePassEnabled = true;
+        
+        // Debug culling visualization
+        bool DebugCullingMode = false;
+        std::shared_ptr<Shader> DebugLineShader;
+        std::shared_ptr<Shader> DebugOverlayShader;
+        unsigned int DebugLineVAO = 0;
+        unsigned int DebugLineVBO = 0;
+        std::vector<float> DebugLineVertices;
+
         unsigned int CubeVAO = 0;
         unsigned int CubeVBO = 0;
         
@@ -76,6 +105,8 @@ private:
     
     static void InitCube();
     static void InitSphere();
+    static void AddDebugAABB(const AABB& box, const glm::vec4& color);
+    static void FlushDebugDraw();
 };
 
 } // namespace Kaya

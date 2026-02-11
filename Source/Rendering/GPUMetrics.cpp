@@ -8,6 +8,7 @@ namespace Kaya {
 
 GPUMetrics GPUMetricsManager::s_Metrics;
 bool GPUMetricsManager::s_Visible = true;
+bool GPUMetricsManager::s_DebugCullingActive = false;
 bool GPUMetricsManager::s_Initialized = false;
 unsigned int GPUMetricsManager::s_QueryStart[2] = { 0, 0 };
 unsigned int GPUMetricsManager::s_QueryEnd[2] = { 0, 0 };
@@ -126,6 +127,11 @@ void GPUMetricsManager::RecordTextureBind() {
     s_Metrics.TextureBinds++;
 }
 
+void GPUMetricsManager::RecordFrustumTest(bool culled) {
+    s_Metrics.ObjectsTested++;
+    if (culled) s_Metrics.ObjectsCulled++;
+}
+
 void GPUMetricsManager::RenderOverlay() {
     if (!s_Visible || !s_Initialized) return;
 
@@ -175,6 +181,27 @@ void GPUMetricsManager::RenderOverlay() {
         ImGui::Text("Shader Binds: %u", s_Metrics.ShaderBinds);
         ImGui::Text("Texture Binds: %u", s_Metrics.TextureBinds);
 
+        // Culling stats
+        if (s_Metrics.ObjectsTested > 0) {
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Culling");
+            ImGui::Text("Objects Tested: %u", s_Metrics.ObjectsTested);
+            ImGui::Text("Objects Culled: %u", s_Metrics.ObjectsCulled);
+            float cullPercent = 100.0f * static_cast<float>(s_Metrics.ObjectsCulled) / static_cast<float>(s_Metrics.ObjectsTested);
+            ImGui::Text("Cull Rate: %.0f%%", cullPercent);
+        }
+
+        // Debug mode indicator
+        ImGui::Separator();
+        if (s_DebugCullingActive) {
+            ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.2f, 1.0f), "[F4] Debug Culling: ON");
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "  Red faces = back-facing (culled)");
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "  Green box = frustum visible");
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "  Red box   = frustum culled");
+        } else {
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "[F4] Debug Culling: OFF");
+        }
+
         // VRAM info (if available)
         if (s_Metrics.TotalVRAMKB > 0) {
             ImGui::Separator();
@@ -222,6 +249,14 @@ void GPUMetricsManager::SetVisible(bool visible) {
 
 bool GPUMetricsManager::IsVisible() {
     return s_Visible;
+}
+
+void GPUMetricsManager::SetDebugCullingActive(bool active) {
+    s_DebugCullingActive = active;
+}
+
+bool GPUMetricsManager::IsDebugCullingActive() {
+    return s_DebugCullingActive;
 }
 
 const GPUMetrics& GPUMetricsManager::GetMetrics() {

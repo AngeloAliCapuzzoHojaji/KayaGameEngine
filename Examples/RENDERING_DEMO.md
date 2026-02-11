@@ -1,10 +1,10 @@
-# 🎨 Rendering Demo - User Guide
+# Rendering Demo - User Guide
 
 ## Overview
 
 The **RenderingDemo** is a comprehensive showcase of all advanced rendering features in Kaya Game Engine. This interactive demo allows you to explore and toggle different rendering techniques in real-time.
 
-## 🚀 Running the Demo
+## Running the Demo
 
 ### Windows
 ```bash
@@ -21,7 +21,7 @@ cd bin/Release
 ./RenderingDemo.exe
 ```
 
-## 🎮 Controls
+## Controls
 
 ### Camera Movement
 - **W/A/S/D** - Move forward/left/backward/right
@@ -38,7 +38,7 @@ cd bin/Release
 ### General
 - **ESC** - Exit application
 
-## 🎬 Demo Scenes
+## Demo Scenes
 
 The demo includes three distinct scenes, each highlighting different rendering capabilities:
 
@@ -81,7 +81,7 @@ The demo includes three distinct scenes, each highlighting different rendering c
 - Dynamic shadow updates with camera movement
 - 2048x2048 shadow map resolution
 
-## 🎨 Rendering Features Demonstrated
+## Rendering Features Demonstrated
 
 ### 1. Texture System
 - **Format Support**: PNG, JPG, TGA (via STB Image)
@@ -181,7 +181,7 @@ m_Skybox = std::make_shared<Skybox>(cubemap);
 
 4. Rebuild and press **3** to toggle skybox rendering
 
-## 📊 Performance Information
+## Performance Information
 
 The demo displays real-time FPS counter in the console output.
 
@@ -197,7 +197,7 @@ Performance varies based on:
 - Shadow map resolution
 - Post-processing complexity
 
-## 🎓 Learning Resources
+## Learning Resources
 
 ### Code Structure
 The demo is organized to be easy to understand:
