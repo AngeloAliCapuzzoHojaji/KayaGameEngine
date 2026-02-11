@@ -7,6 +7,7 @@
 #include "Rendering/Light.h"
 #include "Rendering/PBRMaterial.h"
 #include "Rendering/Skybox.h"
+#include "Rendering/GPUMetrics.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -346,6 +347,7 @@ void Renderer::BeginScene(Camera& camera) {
     s_Data->ProjectionMatrix = camera.GetProjectionMatrix();
     s_Data->CameraPosition = camera.GetPosition();
     s_Data->BasicShader->Bind();
+    GPUMetricsManager::RecordShaderBind();
     s_Data->BasicShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
     
     // Set light properties
@@ -518,6 +520,7 @@ void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const 
 
     glBindVertexArray(s_Data->CubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    GPUMetricsManager::RecordDrawCall(36);
     glBindVertexArray(0);
 }
 
@@ -531,6 +534,7 @@ void Renderer::DrawSphere(const glm::vec3& position, float radius, const glm::ve
 
     glBindVertexArray(s_Data->SphereVAO);
     glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
+    GPUMetricsManager::RecordIndexedDrawCall(s_Data->SphereIndexCount);
     glBindVertexArray(0);
 }
 
@@ -541,9 +545,11 @@ void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const 
     s_Data->BasicShader->SetMat4("u_Transform", transform);
     s_Data->BasicShader->SetInt("u_UseTexture", 1);
     texture->Bind(0);
+    GPUMetricsManager::RecordTextureBind();
 
     glBindVertexArray(s_Data->CubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    GPUMetricsManager::RecordDrawCall(36);
     glBindVertexArray(0);
 }
 
@@ -554,9 +560,11 @@ void Renderer::DrawSphere(const glm::vec3& position, float radius, const std::sh
     s_Data->BasicShader->SetMat4("u_Transform", transform);
     s_Data->BasicShader->SetInt("u_UseTexture", 1);
     texture->Bind(0);
+    GPUMetricsManager::RecordTextureBind();
 
     glBindVertexArray(s_Data->SphereVAO);
     glDrawElements(GL_TRIANGLES, s_Data->SphereIndexCount, GL_UNSIGNED_INT, 0);
+    GPUMetricsManager::RecordIndexedDrawCall(s_Data->SphereIndexCount);
     glBindVertexArray(0);
 }
 
@@ -579,6 +587,7 @@ void Renderer::DrawMesh(Mesh* mesh, const glm::mat4& transform) {
     // Use PBR shader if material has PBR properties
     if (material.UsePBR && material.PBR) {
         s_Data->PBRShader->Bind();
+        GPUMetricsManager::RecordShaderBind();
         s_Data->PBRShader->SetMat4("u_ViewProjection", s_Data->ViewProjectionMatrix);
         s_Data->PBRShader->SetMat4("u_Transform", transform);
         s_Data->PBRShader->SetFloat3("u_CamPos", s_Data->CameraPosition);
@@ -683,6 +692,7 @@ void Renderer::DrawSkybox(Skybox* skybox) {
     if (!skybox) return;
     
     s_Data->SkyboxShader->Bind();
+    GPUMetricsManager::RecordShaderBind();
     
     // Remove translation from view matrix
     glm::mat4 view = glm::mat4(glm::mat3(s_Data->ViewMatrix));

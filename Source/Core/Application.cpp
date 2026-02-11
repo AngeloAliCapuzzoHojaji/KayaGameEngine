@@ -1,5 +1,7 @@
 #include "Core/Application.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/GPUMetrics.h"
+#include "Input/Input.h"
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -22,6 +24,9 @@ Application::Application(const std::string& name) {
     Renderer::Init();
     Renderer::SetViewport(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
     
+    // Initialize GPU metrics
+    GPUMetricsManager::Init();
+    
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -41,6 +46,7 @@ Application::~Application() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     
+    GPUMetricsManager::Shutdown();
     Renderer::Shutdown();
 }
 
@@ -58,9 +64,18 @@ void Application::Run() {
         // Update
         OnUpdate(deltaTime);
         
+        // Toggle GPU metrics with F3
+        static bool f3WasPressed = false;
+        bool f3Pressed = glfwGetKey(static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), GLFW_KEY_F3) == GLFW_PRESS;
+        if (f3Pressed && !f3WasPressed)
+            GPUMetricsManager::SetVisible(!GPUMetricsManager::IsVisible());
+        f3WasPressed = f3Pressed;
+
         // Render
+        GPUMetricsManager::BeginFrame();
         Renderer::Clear();
         OnRender();
+        GPUMetricsManager::EndFrame(deltaTime);
         
         // ImGui Render (optional, overridden by editor)
         // Start ImGui frame
@@ -69,6 +84,7 @@ void Application::Run() {
         ImGui::NewFrame();
         
         OnImGuiRender();
+        GPUMetricsManager::RenderOverlay();
         
         // Render ImGui
         ImGui::Render();

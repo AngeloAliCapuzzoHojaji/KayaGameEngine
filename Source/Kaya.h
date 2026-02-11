@@ -21,6 +21,7 @@
 #include "Rendering/PBRMaterial.h"
 #include "Rendering/PostProcessor.h"
 #include "Rendering/Skybox.h"
+#include "Rendering/GPUMetrics.h"
 
 // Physics
 #include "Physics/PhysicsSystem.h"
