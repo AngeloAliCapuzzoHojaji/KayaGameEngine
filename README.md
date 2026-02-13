@@ -289,11 +289,11 @@ graph LR
 ### Planned Features
 
 #### Rendering
-- [ ] Post-processing effects (bloom, tone mapping, color grading)
+- [x] Post-processing effects (bloom, tone mapping, color grading)
 - [ ] Particle systems
-- [ ] Skybox with HDR support
+- [x] Skybox with HDR support
 - [ ] Instanced rendering
-- [ ] Depth pre-pass optimization
+- [x] Depth pre-pass optimization
 
 #### Core Systems
 - [ ] Asset management system
