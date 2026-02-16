@@ -290,7 +290,7 @@ graph LR
 
 #### Rendering
 - [x] Post-processing effects (bloom, tone mapping, color grading)
-- [ ] Particle systems
+- [x] Particle systems
 - [x] Skybox with HDR support
 - [ ] Instanced rendering
 - [x] Depth pre-pass optimization

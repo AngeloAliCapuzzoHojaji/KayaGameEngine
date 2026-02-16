@@ -23,6 +23,7 @@
 #include "Rendering/Skybox.h"
 #include "Rendering/Frustum.h"
 #include "Rendering/GPUMetrics.h"
+#include "Rendering/ParticleSystem.h"
 
 // Physics
 #include "Physics/PhysicsSystem.h"

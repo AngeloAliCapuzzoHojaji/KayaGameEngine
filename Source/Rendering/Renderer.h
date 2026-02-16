@@ -15,6 +15,7 @@ class Mesh;
 class DirectionalLight;
 class ShadowMap;
 class Skybox;
+class ParticleSystem;
 
 class Renderer {
 public:
@@ -60,6 +61,9 @@ public:
     
     // Skybox rendering
     static void DrawSkybox(Skybox* skybox);
+    
+    // Particle system rendering
+    static void DrawParticles(ParticleSystem* particles);
 
 private:
     struct RendererData {

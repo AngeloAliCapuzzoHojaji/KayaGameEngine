@@ -7,6 +7,7 @@
 #include "Rendering/Light.h"
 #include "Rendering/PBRMaterial.h"
 #include "Rendering/Skybox.h"
+#include "Rendering/ParticleSystem.h"
 #include "Rendering/GPUMetrics.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -986,6 +987,18 @@ void Renderer::DrawSkybox(Skybox* skybox) {
 
     // Re-enable face culling
     if (s_Data->FaceCullingEnabled) glEnable(GL_CULL_FACE);
+}
+
+void Renderer::DrawParticles(ParticleSystem* particles) {
+    if (!particles) return;
+
+    // Extract camera vectors from the view matrix
+    glm::mat4 view = s_Data->ViewMatrix;
+    glm::vec3 right = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    glm::vec3 up    = glm::vec3(view[0][1], view[1][1], view[2][1]);
+
+    particles->Render(s_Data->ViewProjectionMatrix,
+                      s_Data->CameraPosition, right, up);
 }
 
 void Renderer::SetFaceCullingEnabled(bool enabled) {
